@@ -4,8 +4,8 @@ class Mode {
     this.info = info;
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
-    this.action = "";
-    this.prompt = "";
+    this.action = '';
+    this.prompt = '';
   }
 
   clear() {
@@ -13,12 +13,12 @@ class Mode {
     this.info = {};
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
-    //reset highlighting in image if this is being shown
+    // reset highlighting in image if this is being shown
     if (current_highlight) {
       render_image_display();
     }
-    this.action = "";
-    this.prompt = "";
+    this.action = '';
+    this.prompt = '';
     render_info_display();
   }
 
@@ -39,7 +39,7 @@ class Mode {
         current_frame = 0;
       }
       fetch_and_render_frame();
-    } else if (key === "Escape") {
+    } else if (key === 'Escape') {
       // deselect/cancel action/reset highlight
       mode.clear();
     } else if (key === 'h') {
@@ -60,7 +60,7 @@ class Mode {
 
   // keybinds that apply when in edit mode
   handle_edit_keybind(key) {
-    if (key === "e") {
+    if (key === 'e') {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
@@ -68,20 +68,20 @@ class Mode {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(brush.value + 1, maxTrack + 1);
       render_info_display();
-    } else if (key === "-") {
+    } else if (key === '-') {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       render_info_display();
-    } else if (key === "x") {
+    } else if (key === 'x') {
       // turn eraser on and off
       brush.erase = !brush.erase;
       render_image_display();
-    } else if (key === "ArrowDown") {
+    } else if (key === 'ArrowDown') {
       // decrease brush size, minimum size 1
       brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === "ArrowUp") {
+    } else if (key === 'ArrowUp') {
       // increase brush size, diameter shouldn't be larger than the image
       brush.size += 1;
       // redraw the frame with the updated brush preview
@@ -100,11 +100,11 @@ class Mode {
 
   // keybinds that apply in bulk mode, nothing selected
   handle_mode_none_keybind(key) {
-    if (key === "e") {
+    if (key === 'e') {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
-    } else if (key === "-" && this.highlighted_cell_one !== -1) {
+    } else if (key === '-' && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
       if (this.highlighted_cell_one === 1) {
         this.highlighted_cell_one = maxTrack;
@@ -112,7 +112,7 @@ class Mode {
         this.highlighted_cell_one -= 1;
       }
       render_image_display();
-    } else if (key === "=" && this.highlighted_cell_one !== -1) {
+    } else if (key === '=' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       if (this.highlighted_cell_one === maxTrack) {
         this.highlighted_cell_one = 1;
@@ -125,15 +125,15 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(key) {
-    if (key === "f") {
+    if (key === 'f') {
       // hole fill
       this.info = {
-        "label": this.info['label'],
-        "frame": current_frame
+        label: this.info.label,
+        frame: current_frame
       };
       this.kind = Modes.question;
-      this.action = "fill_hole";
-      this.prompt = "Select hole to fill in cell " + this.info['label'];
+      this.action = 'fill_hole';
+      this.prompt = 'Select hole to fill in cell ' + this.info.label;
       render_info_display();
     } else if (key === "c") {
       // create new
@@ -176,72 +176,69 @@ class Mode {
 
   // keybinds that apply in bulk mode, two selected
   handle_mode_multiple_keybind(key) {
-    if (key === "p") {
+    if (key === 'p') {
       // set parent
       this.kind = Modes.question;
-      this.action = "set_parent";
-      this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
+      this.action = 'set_parent';
+      this.prompt = 'Set ' + this.info.label_1 + ' as parent of ' + this.info.label_2 + '? ' + answer;
       render_info_display();
-    } else if (key === "r") {
+    } else if (key === 'r') {
       // replace
       this.kind = Modes.question;
-      this.action = "replace";
-      this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+      this.action = 'replace';
+      this.prompt = 'Replace ' + this.info.label_2 + ' with ' + this.info.label_1 + '? ' + answer;
       render_info_display();
-    } else if (key === "s") {
+    } else if (key === 's') {
       // swap
       this.kind = Modes.question;
-      this.action = "swap_cells";
-      this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
+      this.action = 'swap_cells';
+      this.prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP';
       render_info_display();
-    } else if (key === "w") {
+    } else if (key === 'w') {
       // watershed
       this.kind = Modes.question;
-      this.action = "watershed";
-      this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+      this.action = 'watershed';
+      this.prompt = 'Perform watershed to split ' + this.info.label_1 + '? ' + answer;
       render_info_display();
     }
   }
 
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
-    if (key === " ") {
-      if (this.action === "flood_cell") {
-        action("flood_cell", this.info);
-      } else if (this.action === "trim_pixels") {
-        action("trim_pixels", this.info);
-      } if (this.action === "new_track") {
-        action("create_all_new", this.info);
-      } else if (this.action === "delete_cell") {
+    if (key === ' ') {
+      if (this.action === 'flood_cell') {
+        action('flood_cell', this.info);
+      } else if (this.action === 'trim_pixels') {
+        action('trim_pixels', this.info);
+      } if (this.action === 'new_track') {
+        action('create_all_new', this.info);
+      } else if (this.action === 'delete_cell') {
         action(this.action, this.info);
-      } else if (this.action === "set_parent") {
+      } else if (this.action === 'set_parent') {
         if (this.info.label_1 !== this.info.label_2 &&
-          this.info.frame_1 < this.info.frame_2) {
-          let send_info = {
-            "label_1": this.info.label_1,
-            "label_2": this.info.label_2
-          };
-          action(this.action, send_info);
+            this.info.frame_1 < this.info.frame_2) {
+          action(this.action, {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2
+          });
         }
-      } else if (this.action === "replace") {
+      } else if (this.action === 'replace') {
         if (this.info.label_1 !== this.info.label_2) {
-          let send_info = {
-            "label_1": this.info.label_1,
-            "label_2": this.info.label_2
-          };
-          action(this.action, send_info);
+          action(this.action, {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2
+          });
         }
-      } else if (this.action === "swap_cells") {
+      } else if (this.action === 'swap_cells') {
         if (this.info.label_1 !== this.info.label_2) {
-          let send_info = {
-            "label_1": this.info.label_1,
-            "label_2": this.info.label_2
-          };
-          action("swap_tracks", send_info);
+          action('swap_tracks', {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2
+          });
         }
-      } else if (this.action === "watershed") {
+      } else if (this.action === 'watershed') {
         if (this.info.frame_1 === this.info.frame_2 &&
-          this.info.label_1 === this.info.label_2) {
+            this.info.label_1 === this.info.label_2) {
           this.info.frame = this.info.frame_1;
           this.info.label = this.info.label_1;
           delete this.info.frame_1;
@@ -252,18 +249,17 @@ class Mode {
         }
       }
       this.clear();
-    } else if (key === "s") {
-      if (this.action === "new_track") {
-        action("create_single_new", this.info);
-      } else if (this.action === "swap_cells") {
+    } else if (key === 's') {
+      if (this.action === 'new_track') {
+        action('create_single_new', this.info);
+      } else if (this.action === 'swap_cells') {
         if (this.info.label_1 !== this.info.label_2 &&
           this.info.frame_1 === this.info.frame_2) {
-          let send_info = {
-            "label_1": this.info.label_1,
-            "label_2": this.info.label_2,
-            "frame": this.info.frame_1
-          };
-          action("swap_single_frame", send_info);
+          action('swap_single_frame', {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2,
+            frame: this.info.frame_1
+          });
         }
       }
       this.clear();
@@ -290,12 +286,12 @@ class Mode {
   }
 
   handle_draw() {
-    action("handle_draw", {
-      "trace": JSON.stringify(mouse_trace),
-      "edit_value": brush.value,
-      "brush_size": brush.size,
-      "erase": brush.erase,
-      "frame": current_frame
+    action('handle_draw', {
+      trace: JSON.stringify(mouse_trace),
+      edit_value: brush.value,
+      brush_size: brush.size,
+      erase: brush.erase,
+      frame: current_frame
     });
     mouse_trace = [];
     this.clear()
@@ -305,33 +301,33 @@ class Mode {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
-      this.action = "flood_cell";
+      this.action = 'flood_cell';
       this.info = {
-        "label": current_label,
-        "frame": current_frame,
-        "x_location": mouse_x,
-        "y_location": mouse_y
+        label: current_label,
+        frame: current_frame,
+        x_location: mouse_x,
+        y_location: mouse_y
       }
-      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+      this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
       this.highlighted_cell_one = current_label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
-      this.action = "trim_pixels";
+      this.action = 'trim_pixels';
       this.info = {
-        "label": current_label,
-        "frame": current_frame,
-        "x_location": mouse_x,
-        "y_location": mouse_y
+        label: current_label,
+        frame: current_frame,
+        x_location: mouse_x,
+        y_location: mouse_y
       };
-      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+      this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
       this.highlighted_cell_one = current_label;
     } else {
       // normal click
       this.kind = Modes.single;
       this.info = {
-        "label": current_label,
-        "frame": current_frame
+        label: current_label,
+        frame: current_frame
       };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
@@ -341,12 +337,12 @@ class Mode {
   }
 
   handle_mode_question_click(evt) {
-    if (this.action === "fill_hole" && current_label === 0) {
+    if (this.action === 'fill_hole' && current_label === 0) {
       this.info = {
-        "label": this.info['label'],
-        "frame": current_frame,
-        "x_location": mouse_x,
-        "y_location": mouse_y
+        label: this.info.label,
+        frame: current_frame,
+        x_location: mouse_x,
+        y_location: mouse_y
       };
       action(this.action, this.info);
       this.clear();
@@ -360,14 +356,14 @@ class Mode {
     this.highlighted_cell_two = current_label;
 
     this.info = {
-      "label_1": this.info.label,
-      "label_2": current_label,
-      "frame_1": this.info.frame,
-      "frame_2": current_frame,
-      "x1_location": temp_x,
-      "y1_location": temp_y,
-      "x2_location": mouse_x,
-      "y2_location": mouse_y
+      label_1: this.info.label,
+      label_2: current_label,
+      frame_1: this.info.frame,
+      frame_2: current_frame,
+      x1_location: temp_x,
+      y1_location: temp_y,
+      x2_location: mouse_x,
+      y2_location: mouse_y
     };
   }
 
@@ -376,14 +372,14 @@ class Mode {
     this.highlighted_cell_two = current_label;
 
     this.info = {
-      "label_1": this.info.label_1,
-      "label_2": current_label,
-      "frame_1": this.info.frame_1,
-      "frame_2": current_frame,
-      "x1_location": temp_x,
-      "y1_location": temp_y,
-      "x2_location": mouse_x,
-      "y2_location": mouse_y
+      label_1: this.info.label_1,
+      label_2: current_label,
+      frame_1: this.info.frame_1,
+      frame_2: current_frame,
+      x1_location: temp_x,
+      y1_location: temp_y,
+      x2_location: mouse_x,
+      y2_location: mouse_y
     };
   }
 
@@ -401,7 +397,7 @@ class Mode {
     } else if (this.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
-    } else if (this.kind  === Modes.multiple) {
+    } else if (this.kind === Modes.multiple) {
       this.handle_mode_multiple_click(evt);
     }
     render_image_display();
@@ -409,13 +405,13 @@ class Mode {
 
   render() {
     if (this.kind === Modes.none) {
-      return "";
+      return '';
     }
     if (this.kind === Modes.single) {
-      return "SELECTED " + this.info.label;
+      return 'SELECTED ' + this.info.label;
     }
     if (this.kind === Modes.multiple) {
-      return "SELECTED " + this.info.label_1 + ", " + this.info.label_2;
+      return 'SELECTED ' + this.info.label_1 + ', ' + this.info.label_2;
     }
     if (this.kind === Modes.question) {
       return this.prompt;
@@ -424,11 +420,11 @@ class Mode {
 }
 
 var Modes = Object.freeze({
-  "none": 1,
-  "single": 2,
-  "multiple": 3,
-  "question": 4,
-  "info": 5
+  none: 1,
+  single: 2,
+  multiple: 3,
+  question: 4,
+  info: 5
 });
 
 var temp_x = 0;
@@ -454,54 +450,41 @@ var mouse_y = 0;
 const padding = 5;
 var edit_mode = false;
 let mousedown = false;
-var answer = "(SPACE=YES / ESC=NO)";
+var answer = '(SPACE=YES / ESC=NO)';
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
 
 function upload_file() {
   $.ajax({
-    type: "POST",
-    url: "upload_file/" + project_id,
+    type: 'POST',
+    url: 'upload_file/' + project_id,
     success: function (payload) {
     },
     async: false
   });
 }
 
-// image adjustment functions: take img as input and manipulate data attribute
-// pixel data is 1D array of 8bit RGBA values
-function contrast_image(img, contrast) {
-  let d = img.data;
-  contrast = (contrast / 100) + 1;
-  for (let i = 0; i < d.length; i += 4) {
-    d[i] = d[i]*contrast + brightness;
-    d[i + 1] = d[i+1]*contrast + brightness;
-    d[i + 2] = d[i+2]*contrast + brightness;
-  }
-  return img;
-}
-
 function highlight(img, label) {
-  let ann = img.data;
-
   // use label array to figure out which pixels to recolor
-  for (var j = 0; j < seg_array.length; j += 1){ //y
-    for (var i = 0; i < seg_array[j].length; i += 1){ //x
-      let jlen = seg_array[j].length;
+  let pixelNum;
+  let jlen;
+  for (let j = 0; j < seg_array.length; j++) { // y
+    for (let i = 0; i < seg_array[j].length; i++) { // x
+      jlen = seg_array[j].length;
 
-      if (Math.abs(seg_array[j][i]) === label){
+      if (Math.abs(seg_array[j][i]) === label) {
         // fill in all pixels affected by scale
         // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
+        for (let k = 0; k < scale; k++) {
+          for (let l = 0; l < scale; l++) {
             // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+            pixelNum = ((scale * (jlen * (scale * j + l) + i)) + k) * 4;
 
             // set to red by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 0;
-            ann[(pixel_num*4) + 2] = 0;
+            img.data[pixelNum] = 255;
+            img.data[pixelNum + 1] = 0;
+            img.data[pixelNum + 2] = 0;
           }
         }
       }
@@ -510,54 +493,53 @@ function highlight(img, label) {
 }
 
 function grayscale(img) {
-  let data = img.data;
-  for (var i = 0; i < data.length; i += 4) {
-      var avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      data[i]     = avg; // red
-      data[i + 1] = avg; // green
-      data[i + 2] = avg; // blue
-    }
+  let avg;
+  for (let i = 0; i < img.data.length; i += 4) {
+    avg = (img.data[i] + img.data[i + 1] + img.data[i + 2]) / 3;
+    img.data[i] = avg; // red
+    img.data[i + 1] = avg; // green
+    img.data[i + 2] = avg; // blue
+  }
   return img
 }
 
 function invert(img) {
-  let data = img.data;
-  for (var i = 0; i < data.length; i += 4) {
-    data[i]     = 255 - data[i];     // red
-    data[i + 1] = 255 - data[i + 1]; // green
-    data[i + 2] = 255 - data[i + 2]; // blue
-    }
+  for (let i = 0; i < img.data.length; i += 4) {
+    img.data[i] = 255 - img.data[i]; // red
+    img.data[i + 1] = 255 - img.data[i + 1]; // green
+    img.data[i + 2] = 255 - img.data[i + 2]; // blue
+  }
   return img
 }
 
 function label_under_mouse() {
-  let img_y = Math.floor(mouse_y/scale);
-  let img_x = Math.floor(mouse_x/scale);
-  let new_label;
-  if (img_y >= 0 && img_y < seg_array.length &&
-      img_x >= 0 && img_x < seg_array[0].length) {
-    new_label = Math.abs(seg_array[img_y][img_x]); //check array value at mouse location
-  } else {
-    new_label = 0;
-  }
-  return new_label;
+  const imgY = Math.floor(mouse_y / scale);
+  const imgX = Math.floor(mouse_x / scale);
+  const isValidLabel = (
+    imgY >= 0 &&
+    imgY < seg_array.length &&
+    imgX >= 0 &&
+    imgX < seg_array[0].length
+  );
+  const newLabel = isValidLabel ? Math.abs(seg_array[imgY][imgX]) : 0;
+  return newLabel;
 }
 
 function render_highlight_info() {
   if (current_highlight) {
-    $('#highlight').html("ON");
+    $('#highlight').html('ON');
     if (mode.highlighted_cell_one !== -1) {
       if (mode.highlighted_cell_two !== -1) {
-        $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
+        $('#currently_highlighted').html(mode.highlighted_cell_one + ' , ' + mode.highlighted_cell_two);
       } else {
         $('#currently_highlighted').html(mode.highlighted_cell_one);
       }
     } else {
-      $('#currently_highlighted').html("none");
+      $('#currently_highlighted').html('none');
     }
   } else {
-    $('#highlight').html("OFF");
-    $('#currently_highlighted').html("none");
+    $('#highlight').html('OFF');
+    $('#currently_highlighted').html('none');
   }
 }
 
@@ -572,9 +554,9 @@ function render_edit_info() {
     $('#edit_label').html(brush.value);
 
     if (brush.erase) {
-      $('#edit_erase').html("ON");
+      $('#edit_erase').html('ON');
     } else {
-      $('#edit_erase').html("OFF");
+      $('#edit_erase').html('OFF');
     }
 
   } else {
@@ -586,23 +568,23 @@ function render_edit_info() {
 }
 
 function render_cell_info() {
-  current_label = label_under_mouse();
-  if (current_label !== 0) {
-    $('#label').html(current_label);
-    let track = tracks[current_label.toString()];
-    $('#parent').text(track.parent || "None");
-    $('#daughters').text("[" + track.daughters.toString() + "]");
-    $('#frame_div').text(track.frame_div || "None");
-    let capped = track.capped.toString();
+  const currentLabel = label_under_mouse();
+  if (currentLabel !== 0) {
+    $('#label').html(currentLabel);
+    const track = tracks[currentLabel.toString()];
+    $('#parent').text(track.parent || 'None');
+    $('#daughters').text('[' + track.daughters.toString() + ']');
+    $('#frame_div').text(track.frame_div || 'None');
+    const capped = track.capped.toString();
     $('#capped').text(capped[0].toUpperCase() + capped.substring(1));
     $('#frames').text(track.frames.toString());
   } else {
-    $('#label').html("");
-    $('#capped').text("");
-    $('#parent').text("");
-    $('#daughters').text("");
-    $('#frame_div').text("");
-    $('#frames').text("");
+    $('#label').html('');
+    $('#capped').text('');
+    $('#parent').text('');
+    $('#daughters').text('');
+    $('#frame_div').text('');
+    $('#frames').text('');
   }
 }
 
@@ -624,15 +606,15 @@ function render_info_display() {
 function render_edit_image(ctx) {
   ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
-  let image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+  const imageData = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
   // adjust underlying raw image
-  contrast_image(image_data, current_contrast);
-  grayscale(image_data);
+  contrastImage(imageData, current_contrast);
+  grayscale(imageData);
   if (display_invert) {
-    invert(image_data);
+    invert(imageData);
   }
-  ctx.putImageData(image_data, padding, padding);
+  ctx.putImageData(imageData, padding, padding);
 
   ctx.save();
   ctx.globalCompositeOperation = 'color';
@@ -648,17 +630,17 @@ function render_raw_image(ctx) {
   ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
 
   // contrast image
-  image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  contrast_image(image_data, current_contrast);
+  const imageData = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+  contrastImage(imageData, current_contrast);
   // draw contrasted image over the original
-  ctx.putImageData(image_data, padding, padding);
+  ctx.putImageData(imageData, padding, padding);
 }
 
 function render_annotation_image(ctx) {
   ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   if (current_highlight) {
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    const img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
     highlight(img_data, mode.highlighted_cell_one);
     highlight(img_data, mode.highlighted_cell_two);
     ctx.putImageData(img_data, padding, padding);
@@ -666,7 +648,7 @@ function render_annotation_image(ctx) {
 }
 
 function render_image_display() {
-  let ctx = $('#canvas').get(0).getContext("2d");
+  const ctx = $('#canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   if (edit_mode) {
@@ -685,7 +667,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'GET',
-    url: "frame/" + current_frame + "/" + project_id,
+    url: 'frame/' + current_frame + '/' + project_id,
     success: function(payload) {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
@@ -712,8 +694,8 @@ function load_file(file) {
       maxTrack = Math.max(... Object.keys(tracks).map(Number));
 
       project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0] + 2*padding;
-      $('#canvas').get(0).height = dimensions[1] + 2*padding;
+      $('#canvas').get(0).width = dimensions[0] + 2 * padding;
+      $('#canvas').get(0).height = dimensions[1] + 2 * padding;
     },
     async: false
   });
@@ -746,9 +728,9 @@ function handle_mousedown(evt) {
   mouse_y = evt.offsetY - padding;
   // begin drawing
   if (edit_mode) {
-    let img_y = Math.floor(mouse_y/scale);
-    let img_x = Math.floor(mouse_x/scale);
-    mouse_trace.push([img_y, img_x]);
+    const imgY = Math.floor(mouse_y / scale);
+    const imgX = Math.floor(mouse_x / scale);
+    mouse_trace.push([imgY, imgX]);
   }
 }
 
@@ -766,9 +748,9 @@ function handle_mousemove(evt) {
     // brush's canvas is keeping track of the brush
     if (mousedown) {
       // update mouse_trace
-      let img_y = Math.floor(mouse_y/scale);
-      let img_x = Math.floor(mouse_x/scale);
-      mouse_trace.push([img_y, img_x]);
+      const imgY = Math.floor(mouse_y / scale);
+      const imgX = Math.floor(mouse_x / scale);
+      mouse_trace.push([imgY, imgX]);
     } else {
       brush.clearView();
     }
@@ -781,7 +763,7 @@ function handle_mousemove(evt) {
 function handle_mouseup(evt) {
   mousedown = false;
   if (edit_mode) {
-    //send click&drag coordinates to caliban.py to update annotations
+    // send click&drag coordinates to caliban.py to update annotations
     mode.handle_draw();
     // reset brush preview
     brush.refreshView();
@@ -822,8 +804,8 @@ function prepare_canvas() {
 
 function action(action, info, frame = current_frame) {
   $.ajax({
-    type:'POST',
-    url:"action/" + project_id + "/" + action + "/" + frame,
+    type: 'POST',
+    url: 'action/' + project_id + '/' + action + '/' + frame,
     data: info,
     success: function (payload) {
       if (payload.error) {
@@ -838,7 +820,7 @@ function action(action, info, frame = current_frame) {
       }
       if (payload.tracks) {
         tracks = payload.tracks;
-        maxTrack = Math.max(... Object.keys(tracks).map(Number));
+        maxTrack = Math.max(...Object.keys(tracks).map(Number));
       }
       if (payload.tracks || payload.imgs) {
         render_image_display();
@@ -852,14 +834,14 @@ function start_caliban(filename) {
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
-  }, {passive: false});
+  }, { passive: false });
   // disable space and up/down keys from moving around on page
   $(document).on('keydown', function(event) {
-    if (event.key === " ") {
+    if (event.key === ' ') {
       event.preventDefault();
-    } else if (event.key === "ArrowUp") {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-    } else if (event.key === "ArrowDown") {
+    } else if (event.key === 'ArrowDown') {
       event.preventDefault();
     }
   });
@@ -868,5 +850,10 @@ function start_caliban(filename) {
   prepare_canvas();
   fetch_and_render_frame();
 
-  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
+  brush = new Brush({
+    scale: scale,
+    height: dimensions[1],
+    width: dimensions[0],
+    pad: padding
+  });
 }
