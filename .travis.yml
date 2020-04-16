@@ -7,7 +7,8 @@ git:
 language: python
 
 stages:
-  - browser_test
+  - browser_lint_server
+  - browser_lint_static
 
 cache: pip
 
@@ -16,7 +17,7 @@ script:
 
 jobs:
   include:
-    - stage: browser_test
+    - stage: browser_lint_server
       name: "Caliban Browser Tests"
       python:
         - 3.5
@@ -28,3 +29,11 @@ jobs:
       script:
         - cd browser
         - pytest --pep8
+    - stage: browser_lint_static
+      name: "Caliban Browser Tests"
+      install:
+        - cd browser
+        - npm install
+        - cd ..
+      script:
+        - eslint browser/static/js/**
