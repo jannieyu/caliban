@@ -6,3 +6,6 @@
 
 # python-decouple
 .env
+
+# javascript dependencies
+node_modules
