@@ -10,6 +10,9 @@ import sys
 import tarfile
 import tempfile
 
+from matplotlib.colors import Normalize
+from PIL import Image
+
 import boto3
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,11 +24,10 @@ from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 from skimage.segmentation import find_boundaries
 
-from imgutils import pngify
-from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from caliban.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
-class ZStackReview:
+class ZStackReview(object):
 
     def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb=False):
         self.filename = filename
@@ -92,10 +94,10 @@ class ZStackReview:
         )
 
     def get_max_label(self):
-        '''
+        """
         Helper function that returns the highest label in use in currently-viewed
         feature. If feature is empty, returns 0 to prevent other functions from crashing.
-        '''
+        """
         # check this first, np.max of empty array will crash
         if len(self.cell_ids[self.feature]) == 0:
             max_label = 0
@@ -105,10 +107,10 @@ class ZStackReview:
         return max_label
 
     def rescale_95(self, img):
-        '''
+        """
         Helper function for rescaling an image. Image can be single-
         or multi-channel.
-        '''
+        """
         percentiles = np.percentile(img[img > 0], [5, 95])
         rescaled_img = rescale_intensity(
             img,
@@ -118,10 +120,10 @@ class ZStackReview:
         return rescaled_img
 
     def rescale_raw(self):
-        '''
+        """
         Rescale first 6 raw channels individually and store in memory.
         The rescaled raw array is used subsequently for image display purposes.
-        '''
+        """
         self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype='uint8')
         # this approach allows noise through
         for channel in range(min(6, self.rgb_channels)):
@@ -133,12 +135,12 @@ class ZStackReview:
                 self.rescaled[:, :, channel] = self.rescale_95(raw_channel)
 
     def reduce_to_RGB(self):
-        '''
+        """
         Go from rescaled raw array with up to 6 channels to an RGB image for display.
         Handles adding in CMY channels as needed, and adjusting each channel if
         viewing adjusted raw. Used to update self.rgb, which is used to display
         raw current frame.
-        '''
+        """
         # rgb starts as uint16 so it can handle values above 255 without overflow
         self.rgb_img = np.zeros((self.height, self.width, 3), dtype='uint16')
 
@@ -211,10 +213,10 @@ class ZStackReview:
         return frame
 
     def add_outlines(self, frame):
-        '''
+        """
         Helper function that indicates label outlines in array with
         negative values of that label.
-        '''
+        """
         # this is sometimes int 32 but may be uint, convert to
         # int16 to ensure negative numbers and smaller payload than int32
         frame = frame.astype(np.int16)
@@ -331,9 +333,9 @@ class ZStackReview:
         self.annotated[frame, :, :, self.feature] = annotated
 
     def action_threshold(self, y1, x1, y2, x2, frame, label):
-        '''
+        """
         thresholds the raw image for annotation prediction within user-determined bounding box
-        '''
+        """
         top_edge = min(y1, y2)
         bottom_edge = max(y1, y2)
         left_edge = min(x1, x2)
@@ -367,10 +369,10 @@ class ZStackReview:
             self.add_cell_info(feature=self.feature, add_label=label, frame=frame)
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
-        '''
+        """
         flood fill a cell with a unique new label; alternative to watershed
         for fixing duplicate label issue if cells are not touching
-        '''
+        """
         img_ann = self.annotated[frame, :, :, self.feature]
         old_label = label
         new_label = np.max(self.cell_ids[self.feature]) + 1
@@ -389,10 +391,10 @@ class ZStackReview:
             self.del_cell_info(feature=self.feature, del_label=old_label, frame=frame)
 
     def action_trim_pixels(self, label, frame, x_location, y_location):
-        '''
+        """
         get rid of any stray pixels of selected label; pixels of value label
         that are not connected to the cell selected will be removed from annotation in that frame
-        '''
+        """
 
         img_ann = self.annotated[frame, :, :, self.feature]
         contig_cell = flood(image=img_ann, seed_point=(y_location, x_location))
@@ -406,13 +408,13 @@ class ZStackReview:
         self.annotated[frame, :, :, self.feature] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
-        '''
+        """
         fill a "hole" in a cell annotation with the cell label. Doesn't check
         if annotation at (y,x) is zero (hole to fill) because that logic is handled in
         javascript. Just takes the click location, scales it to match the actual annotation
         size, then fills the hole with label (using skimage flood_fill). connectivity = 1
         prevents hole fill from spilling out into background in some cases
-        '''
+        """
         hole_fill_seed = (y_location, x_location)
         # fill hole with label
         img_ann = self.annotated[frame, :, :, self.feature]
@@ -455,9 +457,9 @@ class ZStackReview:
                 self.add_cell_info(feature=self.feature, add_label=new_label, frame=frame)
 
     def action_delete_mask(self, label, frame):
-        '''
+        """
         remove selected annotation from frame, replacing with zeros
-        '''
+        """
 
         ann_img = self.annotated[frame, :, :, self.feature]
         ann_img = np.where(ann_img == label, 0, ann_img)
@@ -468,11 +470,11 @@ class ZStackReview:
         self.del_cell_info(feature=self.feature, del_label=label, frame=frame)
 
     def action_replace_single(self, label_1, label_2, frame):
-        '''
+        """
         replaces label_2 with label_1, but only in one frame. Frontend checks
         to make sure labels are different and were selected within same frames
         before sending action
-        '''
+        """
         annotated = self.annotated[frame, :, :, self.feature]
         # change annotation
         annotated = np.where(annotated == label_2, label_1, annotated)
@@ -583,10 +585,10 @@ class ZStackReview:
             self.add_cell_info(feature=self.feature, add_label=new_label, frame=frame)
 
     def action_predict_single(self, frame):
-        '''
+        """
         predicts zstack relationship for current frame based on previous frame
         useful for finetuning corrections one frame at a time
-        '''
+        """
 
         annotated = self.annotated[:, :, :, self.feature]
         current_slice = frame
@@ -606,10 +608,10 @@ class ZStackReview:
                 self.create_cell_info(feature=int(self.feature))
 
     def action_predict_zstack(self):
-        '''
+        """
         use location of cells in image to predict which annotations are
         different slices of the same cell
-        '''
+        """
 
         annotated = self.annotated[:, :, :, self.feature]
 
@@ -637,9 +639,9 @@ class ZStackReview:
         s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
 
     def add_cell_info(self, feature, add_label, frame):
-        '''
+        """
         helper function for actions that add a cell to the npz
-        '''
+        """
         # if cell already exists elsewhere in npz:
         add_label = int(add_label)
 
@@ -661,9 +663,9 @@ class ZStackReview:
         self._y_changed = self.info_changed = True
 
     def del_cell_info(self, feature, del_label, frame):
-        '''
+        """
         helper function for actions that remove a cell from the npz
-        '''
+        """
         # remove cell from frame
         old_frames = self.cell_info[feature][del_label]['frames']
         updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
@@ -681,9 +683,9 @@ class ZStackReview:
         self._y_changed = self.info_changed = True
 
     def create_cell_info(self, feature):
-        '''
+        """
         helper function for actions that make or remake the entire cell info dict
-        '''
+        """
         feature = int(feature)
         annotated = self.annotated[:, :, :, feature]
 
@@ -718,7 +720,7 @@ class ZStackReview:
             cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
 
 
-class TrackReview:
+class TrackReview(object):
     def __init__(self, filename, input_bucket, output_bucket, subfolders):
         self.filename = filename
         self.input_bucket = input_bucket
@@ -880,10 +882,10 @@ class TrackReview:
         self.tracked[frame] = annotated
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
-        '''
+        """
         flood fill a cell with a unique new label; alternative to watershed
         for fixing duplicate label issue if cells are not touching
-        '''
+        """
         img_ann = self.tracked[frame, :, :, 0]
         old_label = label
         new_label = max(self.tracks) + 1
@@ -905,10 +907,10 @@ class TrackReview:
             self.del_cell_info(del_label=old_label, frame=frame)
 
     def action_trim_pixels(self, label, frame, x_location, y_location):
-        '''
+        """
         get rid of any stray pixels of selected label; pixels of value label
         that are not connected to the cell selected will be removed from annotation in that frame
-        '''
+        """
 
         img_ann = self.tracked[frame, :, :, 0]
         contig_cell = flood(image=img_ann, seed_point=(int(y_location / self.scale_factor),
@@ -921,13 +923,13 @@ class TrackReview:
         self.tracked[frame, :, :, 0] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
-        '''
+        """
         fill a "hole" in a cell annotation with the cell label. Doesn't check
         if annotation at (y,x) is zero (hole to fill) because that logic is handled in
         javascript. Just takes the click location, scales it to match the actual annotation
         size, then fills the hole with label (using skimage flood_fill). connectivity = 1
         prevents hole fill from spilling out into background in some cases
-        '''
+        """
         # rescale click location -> corresponding location in annotation array
         hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
         # fill hole with label
@@ -1062,8 +1064,8 @@ class TrackReview:
         self._y_changed = self.info_changed = True
 
     def action_swap_single_frame(self, label_1, label_2, frame):
-        '''swap the labels of two cells in one frame, but do not
-        change any of the lineage information'''
+        """swap the labels of two cells in one frame, but do not
+        change any of the lineage information"""
 
         ann_img = self.tracked[frame, :, :, 0]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
@@ -1199,9 +1201,9 @@ class TrackReview:
             raise
 
     def add_cell_info(self, add_label, frame):
-        '''
+        """
         helper function for actions that add a cell to the trk
-        '''
+        """
         # if cell already exists elsewhere in trk:
         try:
             old_frames = self.tracks[add_label]['frames']
@@ -1221,9 +1223,9 @@ class TrackReview:
         self._y_changed = self.info_changed = True
 
     def del_cell_info(self, del_label, frame):
-        '''
+        """
         helper function for actions that remove a cell from the trk
-        '''
+        """
         # remove cell from frame
         old_frames = self.tracks[del_label]['frames']
         updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
@@ -1250,14 +1252,14 @@ def consecutive(data, stepsize=1):
 
 
 def predict_zstack_cell_ids(img, next_img, threshold=0.1):
-    '''
+    """
     Predict labels for next_img based on intersection over union (iou)
     with img. If cells don't meet threshold for iou, they don't count as
     matching enough to share label with "matching" cell in img. Cells
     that don't have a match in img (new cells) get a new label so that
     output relabeled_next does not skip label values (unless label values
     present in prior image need to be skipped to avoid conflating labels).
-    '''
+    """
 
     # relabel to remove skipped values, keeps subsequent predictions cleaner
     next_img = relabel_frame(next_img)
@@ -1387,7 +1389,7 @@ def predict_zstack_cell_ids(img, next_img, threshold=0.1):
 
 
 def relabel_frame(img, start_val=1):
-    '''relabel cells in frame starting from 1 without skipping values'''
+    """relabel cells in frame starting from 1 without skipping values"""
 
     # cells in image to be relabeled
     cell_list = np.unique(img)
@@ -1469,3 +1471,18 @@ def load_trks(trkfile):
                 lineages.append({int(k): v for k, v in lineage.items()})
 
         return {'lineages': lineages, 'raw': raw, 'tracked': tracked}
+
+
+def pngify(imgarr, vmin, vmax, cmap=None):
+    out = io.BytesIO()
+
+    if cmap:
+        cmap = plt.get_cmap(cmap)
+        imgarr = Normalize(vmin=vmin, vmax=vmax)(imgarr)
+        # apply the colormap
+        imgarr = cmap(imgarr, bytes=True)
+
+    img = Image.fromarray(imgarr)
+    img.save(out, format="png")
+    out.seek(0)
+    return out

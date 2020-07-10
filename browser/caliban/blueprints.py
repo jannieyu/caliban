@@ -20,9 +20,9 @@ from flask import redirect
 from flask import current_app
 from werkzeug.exceptions import HTTPException
 
-from helpers import is_trk_file, is_npz_file
-from caliban import TrackReview, ZStackReview
-from models import Project
+from caliban.helpers import is_trk_file, is_npz_file
+from caliban.caliban import TrackReview, ZStackReview
+from caliban.models import Project
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -59,7 +59,7 @@ def handle_exception(error):
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
-    '''Upload .trk/.npz data file to AWS S3 bucket.'''
+    """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
@@ -86,9 +86,9 @@ def upload_file(project_id):
 
 @bp.route('/action/<int:project_id>/<action_type>/<int:frame>', methods=['POST'])
 def action(project_id, action_type, frame):
-    ''' Make an edit operation to the data file and update the object
+    """ Make an edit operation to the data file and update the object
         in the database.
-    '''
+    """
     start = timeit.default_timer()
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
@@ -144,9 +144,9 @@ def action(project_id, action_type, frame):
 
 @bp.route('/frame/<int:frame>/<int:project_id>')
 def get_frame(frame, project_id):
-    ''' Serve modes of frames as pngs. Send pngs and color mappings of
+    """ Serve modes of frames as pngs. Send pngs and color mappings of
         cells to .js file.
-    '''
+    """
     start = timeit.default_timer()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
@@ -179,9 +179,9 @@ def get_frame(frame, project_id):
 
 @bp.route('/load/<filename>', methods=['POST'])
 def load(filename):
-    ''' Initate TrackReview/ZStackReview object and load object to database.
+    """ Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
-    '''
+    """
     start = timeit.default_timer()
     current_app.logger.info('Loading track at %s', filename)
 
@@ -238,15 +238,15 @@ def load(filename):
 
 @bp.route('/', methods=['GET', 'POST'])
 def form():
-    '''Request HTML landing page to be rendered.'''
+    """Request HTML landing page to be rendered."""
     return render_template('index.html')
 
 
 @bp.route('/tool', methods=['GET', 'POST'])
 def tool():
-    ''' Request HTML caliban tool page to be rendered after user inputs
+    """ Request HTML caliban tool page to be rendered after user inputs
         filename in the landing page.
-    '''
+    """
     if 'filename' not in request.form:
         return redirect('/')
 
@@ -296,10 +296,10 @@ def tool():
 
 @bp.route('/<filename>', methods=['GET', 'POST'])
 def shortcut(filename):
-    ''' Request HTML caliban tool page to be rendered if user makes a URL
+    """ Request HTML caliban tool page to be rendered if user makes a URL
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
-    '''
+    """
     rgb = request.args.get('rgb', default='false', type=str)
     pixel_only = request.args.get('pixel_only', default='false', type=str)
     label_only = request.args.get('label_only', default='false', type=str)
