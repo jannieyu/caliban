@@ -13,6 +13,7 @@ from caliban.blueprints import bp
 
 compress = Compress()  # pylint: disable=C0103
 
+
 class ReverseProxied(object):
     """Reverse proxy for serving static files over https"""
     def __init__(self, app):
