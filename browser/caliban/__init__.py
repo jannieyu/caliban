@@ -5,6 +5,7 @@ from __future__ import print_function
 
 from flask import Flask
 from flask_compress import Compress
+from flask_cors import CORS
 
 from caliban import config
 from caliban.models import db
@@ -29,6 +30,8 @@ class ReverseProxied(object):
 def create_app(**config_overrides):
     """Factory to create the Flask application"""
     app = Flask(__name__)
+
+    CORS(app)
 
     # Load config.
     app.config.from_object(config)
